@@ -15,12 +15,19 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                // Dockerfile eken image eka build kirima
-                sh "docker build -t ${IMAGE_NAME}:latest ."
-            }
-        }
+        stage('Docker Build & Deploy') {
+    steps {
+        // 1. Docker image eka build kirima
+        sh 'docker build -t react-cicd-app .'
+        
+        // 2. Parana container ekak run wenawanam eka stop karala remove kirima
+        sh 'docker stop react-app-container || true'
+        sh 'docker rm react-app-container || true'
+        
+        // 3. Aluth image eken container eka run kirima (Port 80)
+        sh 'docker run -d -p 80:80 --name react-app-container react-cicd-app'
+    }
+}
 
         stage('Stop Existing Container') {
             steps {

@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+    environment {
+        // Docker image details
+        IMAGE_NAME = 'react-cicd-app'
+        CONTAINER_NAME = 'react-app-container'
+        PORT = '80'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -8,21 +15,27 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Docker Image') {
             steps {
-                sh 'npm install'
+                // Dockerfile eken image eka build kirima
+                sh "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
 
-        stage('Build React App') {
+        stage('Stop Existing Container') {
             steps {
-                sh 'npm run build'
+                // Kalin run wena container ekak thiyenawanam eka nawatha remove kirima
+                sh '''
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                '''
             }
         }
 
-        stage('Test') {
+        stage('Deploy Container') {
             steps {
-                sh 'CI=true npm test'
+                // Aluth image eken container eka run kirima
+                sh "docker run -d -p ${PORT}:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}:latest"
             }
         }
     }

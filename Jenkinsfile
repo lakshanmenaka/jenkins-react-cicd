@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'git@github.com:lakshanmenaka/jenkins-react-cicd.git'
+                git branch: 'main', credentialsId: 'github-ssh-key-2', url: 'git@github.com:lakshanmenaka/jenkins-react-cicd.git'
             }
         }
 

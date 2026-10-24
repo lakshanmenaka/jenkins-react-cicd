@@ -2,52 +2,49 @@ pipeline {
     agent any
 
     environment {
-        // Docker image details
         IMAGE_NAME = 'react-cicd-app'
-        CONTAINER_NAME = 'react-app-container'
-        PORT = '80'
+        CONTAINER_NAME = 'react-cicd-app'
+        HOST_PORT = '8081'
+        CONTAINER_PORT = '80'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', credentialsId: 'github-ssh-key', url: 'git@github.com:lakshanmenaka/jenkins-react-cicd.git'
+                checkout scm
             }
         }
 
-        stage('Docker Build & Deploy') {
-    steps {
-        // 1. Docker image eka build kirima
-        sh 'docker build -t react-cicd-app .'
-        
-        // 2. Parana container ekak run wenawanam eka stop karala remove kirima
-        sh 'docker stop react-app-container || true'
-        sh 'docker rm react-app-container || true'
-        
-        // 3. Aluth image eken container eka run kirima (Port 80)
-        sh 'docker run -d -p 80:80 --name react-app-container react-cicd-app'
-    }
-}
-
-        stage('Stop Existing Container') {
+        stage('Build Docker Image') {
             steps {
-                // Kalin run wena container ekak thiyenawanam eka nawatha remove kirima
-                sh '''
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm ${CONTAINER_NAME} || true
-                '''
+                sh 'docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .'
+                sh 'docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest'
             }
         }
 
         stage('Deploy Container') {
             steps {
-                // Aluth image eken container eka run kirima
-                sh "docker run -d -p ${PORT}:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}:latest"
+                sh '''
+                    docker rm -f ${CONTAINER_NAME} || true
+                    docker run -d \
+                      --name ${CONTAINER_NAME} \
+                      --restart unless-stopped \
+                      -p ${HOST_PORT}:${CONTAINER_PORT} \
+                      ${IMAGE_NAME}:latest
+                '''
             }
         }
     }
 
     post {
+        success {
+            echo 'React application deployed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the console output.'
+        }
+
         always {
             cleanWs()
         }
